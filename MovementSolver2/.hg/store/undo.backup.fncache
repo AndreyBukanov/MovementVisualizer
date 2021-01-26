@@ -1,0 +1,12 @@
+data/main.cpp.i
+data/MovementSolver2.pro.i
+data/mainwindow.ui.i
+data/mainwindow.h.i
+data/mainwindow.cpp.i
+data/common/math_functions.h.i
+data/common/geometry_items.h.i
+data/common/i_polar_shape.h.i
+data/common/math_functions.cpp.i
+data/common/i_polar_cam.h.i
+data/common/leg_trajectory.h.i
+data/common/leg_trajectory.cpp.i
