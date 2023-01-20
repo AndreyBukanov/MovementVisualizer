@@ -1,6 +1,8 @@
 #ifndef LEG_CONSTUCTOR_H
 #define LEG_CONSTUCTOR_H
 
+#include <stdint.h>
+
 #include "geometry_items.h"
 #include "math_functions.h"
 #include "i_polar_shape.h"
@@ -11,6 +13,9 @@ struct Leg
     Geometry::Vector chord    = Geometry::Vector();
     Geometry::Vector shoulder = Geometry::Vector();
     Geometry::Vector forearm  = Geometry::Vector();
+
+    double shoulder_angle = 0.0;
+    double forearm_angle = 0.0;
 };
 
 struct LegSettings
@@ -20,6 +25,7 @@ struct LegSettings
     double sholder = 0.0;
     double forearm = 0.0;
 
+    double angle = 0.0;
     double phase = 0.0;
 
     bool inverted = false;
@@ -41,14 +47,30 @@ struct BaseSettings
     unsigned long semiMinorAxis = 0;
     unsigned long centerHeight  = 0;
 
-    unsigned long phaseOffset = 0;
-
     void setToDefault();
 };
+
+#pragma pack(push,1)
+struct Base
+{
+   uint16_t FL_high = 0;
+   uint16_t FL_low  = 0;
+
+   uint16_t RL_high = 0;
+   uint16_t RL_low  = 0;
+
+   uint16_t FR_high = 0;
+   uint16_t FR_low  = 0;
+
+   uint16_t RR_high = 0;
+   uint16_t RR_low  = 0;
+};
+#pragma pack(pop)
 
 struct LegConstructor
 {
     static Leg solve(LegSettings &settings, IPolarShape *trajectory);
+    static Base legsToBase(Leg &FL, Leg &RL, Leg &FR, Leg &RR);
 };
 
 #endif // LEG_CONSTUCTOR_H

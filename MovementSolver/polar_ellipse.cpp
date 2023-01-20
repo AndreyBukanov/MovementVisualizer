@@ -6,8 +6,10 @@ PolarEllipse::PolarEllipse(double x, double y, double a, double b) : PolarShape(
     m_b = b;
 }
 
-Geometry::Dot PolarEllipse::value(double angle)
+Geometry::Dot PolarEllipse::value(double angle, double phase)
 {
+    (void)phase;
+
     Geometry::Vector MajorR = Math::decart(m_a, angle);
     Geometry::Vector MinorR = Math::decart(m_b, angle);
 

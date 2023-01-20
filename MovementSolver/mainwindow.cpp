@@ -15,12 +15,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    connect(ui->horizontalSliderPhase, SIGNAL(valueChanged(int)), this, SLOT(on_updatePhaseInt(int)));
-    connect(&m_running_thread, SIGNAL(step(double)), this, SLOT(on_updatePhaseDouble(double)));
+    connect(ui->dialPhase, SIGNAL(valueChanged(int)), this, SLOT(on_updatePhaseInt(int)));
+    connect(ui->horizontalSliderPhase, SIGNAL(valueChanged(int)), this, SLOT(on_updateAngleInt(int)));
+    connect(&m_running_thread, SIGNAL(step(double)), this, SLOT(on_updateAngleDouble(double)));
     connect(this, SIGNAL(stopRunnigThread()), &m_running_thread, SLOT(pause()));
 
     m_step = ui->doubleSpinBoxPhaseStep->value();
-    m_angle = ui->horizontalSliderPhase->value();
+    m_angle = (double)ui->horizontalSliderPhase->value() / 10;
+    m_phase = (double)ui->dialPhase->value() / 10;
     m_delay = (m_step / (double)ui->spinBoxAngleSpeed->value()) * 1000;
 
     m_settings.setToDefault();
@@ -42,6 +44,17 @@ void MainWindow::drawScene(BaseSettings &settings)
 {
     //==========================================================
 
+    double angle = getCurrentAngle();
+    double phase = getCurrentPhase();
+
+    double step_coeff = phase / Math::pi;
+
+    if(phase > Math::pi)
+        step_coeff = 1.0;
+
+    double step_length = settings.semiMajorAxis * step_coeff;
+    double step_height = settings.semiMinorAxis * step_coeff;
+
     Geometry::Dot baseBegin(settings.baselength / 2.0, 0.0);
     Geometry::Dot baseEnd(-1.0 * settings.baselength / 2.0, 0.0);
 
@@ -49,45 +62,49 @@ void MainWindow::drawScene(BaseSettings &settings)
     Geometry::Dot trajectoryCenterRear(baseEnd.x, settings.centerHeight);
 
     PolarSpirale trajectoryFront(trajectoryCenterFront.x, trajectoryCenterFront.y,
-                                 settings.semiMajorAxis, settings.semiMinorAxis);
+                                 step_length, step_height);
 
     PolarSpirale trajectoryRear(trajectoryCenterRear.x, trajectoryCenterRear.y,
-                                settings.semiMajorAxis, settings.semiMinorAxis);
+                                step_length, step_height);
 
     LegSettings legSettings;
 
     legSettings.sholder = settings.sholderLength;
     legSettings.forearm = settings.forearmLength;
 
-    double phaseOffset = 0.0;
+    double phase_offset = Math::pi;
 
-    double legFrontLeftPhaseOffset  = Math::radian(phaseOffset);                           // 0.0 * Math::pi / 2.0;
-    double legFrontRightPhaseOffset = Math::radian(phaseOffset += settings.phaseOffset);   // 2.0 * Math::pi / 2.0;
-    double legRearLeftPhaseOffset   = Math::radian(phaseOffset += settings.phaseOffset);   // 1.0 * Math::pi / 2.0;
-    double legRearRightPhaseOffset  = Math::radian(phaseOffset += settings.phaseOffset);   // 3.0 * Math::pi / 2.0;
+    if(phase > phase_offset)
+        phase_offset = phase;
 
+    double legFrontLeftPhaseOffset  = 0;
+    double legFrontRightPhaseOffset = phase_offset;
+    double legRearLeftPhaseOffset   = phase;
+    double legRearRightPhaseOffset  = phase + phase_offset;
 
-    double phase = getCurrentPhase();
-
-    legSettings.phase    = phase + legFrontLeftPhaseOffset;
+    legSettings.angle    = angle + legFrontLeftPhaseOffset;
+    legSettings.phase    = phase;
     legSettings.origin   = baseBegin;
     legSettings.inverted = true;
 
     Leg legFrontLeft = LegConstructor::solve(legSettings, &trajectoryFront);
 
-    legSettings.phase    = phase + legFrontRightPhaseOffset;
+    legSettings.angle    = angle + legFrontRightPhaseOffset;
+    legSettings.phase    = phase;
     legSettings.origin   = baseBegin;
     legSettings.inverted = true;
 
     Leg legFrontRight = LegConstructor::solve(legSettings, &trajectoryFront);
 
-    legSettings.phase    = phase + legRearLeftPhaseOffset;
+    legSettings.angle    = angle + legRearLeftPhaseOffset;
+    legSettings.phase    = phase;
     legSettings.origin   = baseEnd;
     legSettings.inverted = false;
 
     Leg legRearLeft = LegConstructor::solve(legSettings, &trajectoryRear);
 
-    legSettings.phase    = phase + legRearRightPhaseOffset;
+    legSettings.angle    = angle + legRearRightPhaseOffset;
+    legSettings.phase    = phase;
     legSettings.origin   = baseEnd;
     legSettings.inverted = false;
 
@@ -101,8 +118,8 @@ void MainWindow::drawScene(BaseSettings &settings)
 
     if(ui->checkBoxConstructGeometry->isChecked())
     {
-        drawTrajectory(scene, &trajectoryFront);
-        drawTrajectory(scene, &trajectoryRear);
+        drawTrajectory(scene, &trajectoryFront, phase);
+        drawTrajectory(scene, &trajectoryRear, phase);
 
         drawConstructionGeometry(scene, legFrontLeft);
         drawConstructionGeometry(scene, legFrontRight);
@@ -123,6 +140,12 @@ void MainWindow::drawScene(BaseSettings &settings)
     //==========================================================
 
     updateScene(scene);
+
+    //==========================================================
+
+    Base base = LegConstructor::legsToBase(legFrontLeft, legFrontRight, legRearLeft, legRearRight);
+
+    m_com_port_service.send((char *)&base, sizeof(base));
 }
 
 void MainWindow::drawOrigin(QGraphicsScene *scene)
@@ -135,7 +158,7 @@ void MainWindow::drawOrigin(QGraphicsScene *scene)
     scene->addLine(0, -0xffff, 0, 0xffff, pen);
 }
 
-void MainWindow::drawTrajectory(QGraphicsScene *scene, IPolarShape *trajectory)
+void MainWindow::drawTrajectory(QGraphicsScene *scene, IPolarShape *trajectory, double phase)
 {
     QPen pen(Qt::gray);
     pen.setStyle(Qt::PenStyle::DashLine);
@@ -144,19 +167,20 @@ void MainWindow::drawTrajectory(QGraphicsScene *scene, IPolarShape *trajectory)
     Geometry::Dot dot;
     Geometry::Vector vector;
 
-    for (int phase = 0; phase < 360; phase++)
+    for (int angle_deg = 0; angle_deg < 360; angle_deg++)
     {
-        double angle = Math::radian(phase);
+        double angle = Math::radian(angle_deg);
 
         vector.begin = dot;
 
-        dot = trajectory->value(angle);
+        dot = trajectory->value(angle, phase);
 
         if(phase == 0) continue;
 
         vector.end = dot;
 
-        drawVector(scene, vector, pen);
+        if(angle_deg > 0)
+            drawVector(scene, vector, pen);
     }
 }
 
@@ -222,7 +246,7 @@ void MainWindow::drawTopView(QGraphicsScene *scene, Leg &fl, Leg &fr, Leg &rl, L
     {
         double result = abs(a - b);
 
-        return result < 0.1 ? true : false;
+        return result < 0.00000000000001 ? true : false;
     };
 
     auto processFootprint = [this, almostEqual, a, height]
@@ -243,28 +267,33 @@ void MainWindow::drawTopView(QGraphicsScene *scene, Leg &fl, Leg &fr, Leg &rl, L
 
     processFootprint(scene, pen, footprintFL, contactPolygon, fl.support.end.y);
     processFootprint(scene, pen, footprintFR, contactPolygon, fr.support.end.y);
-    processFootprint(scene, pen, footprintRL, contactPolygon, rl.support.end.y);
     processFootprint(scene, pen, footprintRR, contactPolygon, rr.support.end.y);
+    processFootprint(scene, pen, footprintRL, contactPolygon, rl.support.end.y);
 
     //=========================================================================
-
-    if (contactPolygon.size() < 2)
-        return;
 
     pen.setWidth(1);
     pen.setColor(Qt::green);
 
-    Geometry::Dot begin = contactPolygon.at(contactPolygon.size() - 1);
-    Geometry::Dot end;
-    Geometry::Vector vector;
+    if(contactPolygon.size() < 1)
+        return;
 
     for(int i = 0; i < contactPolygon.size(); i++)
     {
-        end = contactPolygon.at(i);
-        vector = {begin, end};
+        if(i == 0) continue;
+
+        Geometry::Dot begin = contactPolygon.at(i-1);
+        Geometry::Dot end   = contactPolygon.at(i);
+        Geometry::Vector vector(begin, end);
+
         drawVector(scene, vector, pen);
-        begin = end;
     }
+
+    Geometry::Dot begin = contactPolygon.at(contactPolygon.size() - 1);
+    Geometry::Dot end   = contactPolygon.at(0);
+    Geometry::Vector vector(begin, end);
+
+    drawVector(scene, vector, pen);
 }
 
 void MainWindow::drawVector(QGraphicsScene *scene, Geometry::Vector &vector, QPen &pen)
@@ -354,18 +383,24 @@ void MainWindow::on_pushButtonSettingsUpdate_released()
 }
 
 
-void MainWindow::on_updatePhaseDouble(double phase)
+void MainWindow::on_updateAngleDouble(double angle)
 {
-    m_angle = phase;
-    ui->lcdNumberPhase->display(m_angle);
+    m_angle = angle;
+    ui->lcdNumberAngle->display(m_angle);
+    drawScene(m_settings);
+}
+
+void MainWindow::on_updateAngleInt(int angle)
+{
+    m_angle = (double)angle / 10;
+    ui->lcdNumberAngle->display(m_angle);
     drawScene(m_settings);
 }
 
 void MainWindow::on_updatePhaseInt(int phase)
 {
-    m_angle = (double)phase / 10;
-    ui->lcdNumberPhase->display(m_angle);
-    drawScene(m_settings);
+    m_phase = (double)phase / 10;
+    ui->lcdNumberPhaseOffset->display(m_phase);
 }
 
 void MainWindow::setSettings(BaseSettings &settings)
@@ -381,8 +416,6 @@ void MainWindow::setSettings(BaseSettings &settings)
     ui->spinBoxCenterHeight->setValue(settings.centerHeight);
     ui->spinBoxSemiMajorAxis->setValue(settings.semiMajorAxis);
     ui->spinBoxSemiMinorAxis->setValue(settings.semiMinorAxis);
-
-    ui->dialPhaseOffset->setValue(settings.phaseOffset);
 }
 
 void MainWindow::getSettings(BaseSettings &settings)
@@ -400,13 +433,16 @@ void MainWindow::getSettings(BaseSettings &settings)
     settings.centerHeight  = ui->spinBoxCenterHeight->value();
     settings.semiMajorAxis = ui->spinBoxSemiMajorAxis->value();
     settings.semiMinorAxis = ui->spinBoxSemiMinorAxis->value();
+}
 
-    settings.phaseOffset  = ui->dialPhaseOffset->value();
+double MainWindow::getCurrentAngle()
+{
+   return Math::radian(m_angle);
 }
 
 double MainWindow::getCurrentPhase()
 {
-    return Math::radian(m_angle);
+    return Math::radian(m_phase);
 }
 
 void MainWindow::updateScene(QGraphicsScene *scene)
@@ -489,8 +525,59 @@ void MainWindow::on_spinBoxAngleSpeed_valueChanged(int arg1)
     m_delay = (m_step / (double)arg1) * 1000;
 }
 
-void MainWindow::on_dialPhaseOffset_valueChanged(int value)
+void MainWindow::on_checkBox_ComEnable_stateChanged(int arg1)
 {
-    ui->lcdNumberPhaseOffset->display(value);
-    getSettings(m_settings);
+    bool enable = false;
+
+    if(arg1 == Qt::Checked)
+        enable = true;
+
+    ui->comboBox_ComList->setEnabled(enable);
+    ui->pushButton_ComScan->setEnabled(enable);
+    ui->pushButton_ComConnect->setEnabled(enable);
 }
+
+
+void MainWindow::on_pushButton_ComScan_released()
+{
+    m_com_port_service.scan();
+
+    auto ports = m_com_port_service.getList();
+
+    ui->comboBox_ComList->clear();
+
+    for(auto port : ports)
+    {
+        ui->comboBox_ComList->addItem(port);
+    }
+}
+
+
+void MainWindow::on_pushButton_ComConnect_released()
+{
+    bool connected = m_com_port_service.isConnected();
+
+    if(connected)
+    {
+        m_com_port_service.disconnect();
+        connected = false;
+    }
+    else
+    {
+        QString port_name = ui->comboBox_ComList->currentText();
+        connected = m_com_port_service.connect(port_name);
+    }
+
+    QString connect_text = "";
+
+    if(connected)
+        connect_text = "Disconnect";
+    else
+        connect_text = "Connect";
+
+    ui->pushButton_ComConnect->setText(connect_text);
+    ui->pushButton_ComScan->setEnabled(!connected);
+    ui->comboBox_ComList->setEnabled(!connected);
+    ui->checkBox_ComEnable->setEnabled(!connected);
+}
+

@@ -27,3 +27,6 @@ data/polar_halfellipse.h.i
 data/runing_thread.h.i
 data/runing_thread.cpp.i
 data/polar_halfellipse.cpp.i
+data/polar_spirale.cpp.i
+data/polar_spirale.h.i
+data/MovementSolver.pro.user.0cb4057.i

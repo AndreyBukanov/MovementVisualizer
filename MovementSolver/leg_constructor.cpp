@@ -15,8 +15,6 @@ void BaseSettings::setToDefault()
     centerHeight  = 70;
     semiMajorAxis = 100;
     semiMinorAxis = 20;
-
-    phaseOffset  = 0;
 }
 
 Leg LegConstructor::solve(LegSettings &settings, IPolarShape *trajectory)
@@ -26,7 +24,7 @@ Leg LegConstructor::solve(LegSettings &settings, IPolarShape *trajectory)
     //=========================================================
 
     Geometry::Dot begin = trajectory->center();
-    Geometry::Dot end   = trajectory->value(settings.phase);
+    Geometry::Dot end   = trajectory->value(settings.angle, settings.phase);
 
     leg.chord = Geometry::Vector(begin, end);
 
@@ -48,6 +46,17 @@ Leg LegConstructor::solve(LegSettings &settings, IPolarShape *trajectory)
     double alpha = Math::triangleAngle(settings.sholder, supportLength, settings.forearm);
     double betta = Math::triangleAngle(settings.sholder, settings.forearm, supportLength);
 
+    //------------------------------------------------------
+
+    if(settings.inverted)
+        leg.shoulder_angle = Math::pi - alpha - supportAngle;
+    else
+        leg.shoulder_angle = supportAngle - alpha;
+
+    leg.forearm_angle = betta;
+
+    //------------------------------------------------------
+
     alpha = settings.inverted ? -alpha : alpha;
     betta = settings.inverted ? -betta : betta;
 
@@ -63,4 +72,23 @@ Leg LegConstructor::solve(LegSettings &settings, IPolarShape *trajectory)
     //=========================================================
 
     return leg;
+}
+
+Base LegConstructor::legsToBase(Leg &FL, Leg &FR, Leg &RL, Leg &RR)
+{
+    Base base;
+
+    base.FL_high = round(Math::degree(FL.shoulder_angle) * 10);
+    base.FL_low  = round(Math::degree(FL.forearm_angle) * 10);
+
+    base.RL_high = round(Math::degree(RL.shoulder_angle) * 10);
+    base.RL_low  = round(Math::degree(RL.forearm_angle) * 10);
+
+    base.FR_high = round(Math::degree(FR.shoulder_angle) * 10);
+    base.FR_low  = round(Math::degree(FR.forearm_angle) * 10);
+
+    base.RR_high = round(Math::degree(RR.shoulder_angle) * 10);
+    base.RR_low  = round(Math::degree(RR.forearm_angle) * 10);
+
+    return base;
 }

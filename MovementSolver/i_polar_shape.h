@@ -18,7 +18,7 @@ public:
    /*
     * Return dot with coordinates on curve according the angle
     */
-   virtual Geometry::Dot value(double angle) = 0;
+   virtual Geometry::Dot value(double angle, double phase) = 0;
 };
 
 #endif // I_POLAR_SHAPE_H

@@ -7,6 +7,7 @@
 
 #include "geometry_items.h"
 #include "leg_constuctor.h"
+#include "com_port_service.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -67,9 +68,11 @@ private slots:
 
     void on_pushButtonSettingsUpdate_released();
 
-    void on_updatePhaseDouble(double phase);
+    void on_updateAngleDouble(double angle);
 
-    void on_updatePhaseInt(int phase);
+    void on_updateAngleInt(int angle);
+
+    void on_updatePhaseInt(int angle);
 
     void on_pushButtonPlay_released();
 
@@ -77,7 +80,11 @@ private slots:
 
     void on_spinBoxAngleSpeed_valueChanged(int arg1);
 
-    void on_dialPhaseOffset_valueChanged(int value);
+    void on_checkBox_ComEnable_stateChanged(int arg1);
+
+    void on_pushButton_ComScan_released();
+
+    void on_pushButton_ComConnect_released();
 
 private:
     Ui::MainWindow *ui;
@@ -86,6 +93,7 @@ private:
 
     double m_step = 0;
     double m_angle = 0;
+    double m_phase = 0;
     double m_delay = 0;
 
     BaseSettings m_settings;
@@ -93,6 +101,7 @@ private:
     void setSettings(BaseSettings &settings);
     void getSettings(BaseSettings &settings);
 
+    double getCurrentAngle();
     double getCurrentPhase();
 
     void updateScene (QGraphicsScene *scene);
@@ -100,7 +109,7 @@ private:
     void drawScene(BaseSettings &settings);
 
     void drawOrigin                (QGraphicsScene *scene);
-    void drawTrajectory            (QGraphicsScene *scene, IPolarShape *trajectory);
+    void drawTrajectory            (QGraphicsScene *scene, IPolarShape *trajectory, double phase);
     void drawConstructionGeometry  (QGraphicsScene *scene, Leg &leg);
     void drawMainGeometry          (QGraphicsScene *scene, Leg &leg, int layer);
     void drawTopView               (QGraphicsScene *scene, Leg &fl, Leg &fr, Leg &rl, Leg &rr, double height);
@@ -108,5 +117,6 @@ private:
     void drawVector(QGraphicsScene *scene, Geometry::Vector &vector, QPen &pen);
     void drawEllipse(QGraphicsScene *scene, double x, double y, double a, double b, QPen &pen);
 
+    ComPortService m_com_port_service;
 };
 #endif // MAINWINDOW_H

@@ -1,0 +1,12 @@
+release/leg_constructor.o
+release/main.o
+release/mainwindow.o
+release/math_functions.o
+release/polar_ellipse.o
+release/polar_halfellipse.o
+release/polar_shape.o
+release/runing_thread.o
+release/solver_thread.o
+release/moc_mainwindow.o
+release/moc_runing_thread.o
+release/moc_solver_thread.o

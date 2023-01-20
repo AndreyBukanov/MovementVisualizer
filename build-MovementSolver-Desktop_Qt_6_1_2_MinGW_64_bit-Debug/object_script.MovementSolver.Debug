@@ -1,0 +1,12 @@
+debug/leg_constructor.o
+debug/main.o
+debug/mainwindow.o
+debug/math_functions.o
+debug/polar_ellipse.o
+debug/polar_halfellipse.o
+debug/polar_shape.o
+debug/runing_thread.o
+debug/solver_thread.o
+debug/moc_mainwindow.o
+debug/moc_runing_thread.o
+debug/moc_solver_thread.o

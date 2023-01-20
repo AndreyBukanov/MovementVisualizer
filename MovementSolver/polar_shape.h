@@ -17,7 +17,7 @@ public:
     PolarShape(Geometry::Dot center);
 
     Geometry::Dot center() override;
-    Geometry::Dot value(double angle) override;
+    Geometry::Dot value(double angle, double phase) override;
 };
 
 #endif // POLARSHAPE_H

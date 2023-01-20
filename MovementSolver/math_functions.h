@@ -7,6 +7,7 @@
 namespace Math
 {
     static const double pi = atan(1) * 4;
+    static const double pi2 = pi * 2;
 
     /*
      * Return [1,0] vector
@@ -62,6 +63,11 @@ namespace Math
      *  Convert and return angle form Radian to Degree
     */
     double degree(double angle);
+
+    /*
+     *  Remove all full turns and make positive rotation
+    */
+    double solveAngle(double angle);
 
     /*
      *  Calculate vector from polar to decart system

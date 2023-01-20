@@ -1,0 +1,8 @@
+Command line: 
+loaded result for config test config.qtserialport_serialport.tests.ntddmodm
++ cd /d C:\Users\selfh\work\cat\qtSerialPort\build-qtserialport-Desktop_Qt_6_1_2_MinGW_64_bit-Debug\config.tests\ntddmodm && C:\Qt\6.1.2\mingw81_64\bin\qmake.exe "CONFIG -= qt debug_and_release app_bundle lib_bundle" "CONFIG += shared warn_off console single_arch" C:/Users/selfh/work/cat/qtSerialPort/build-qtserialport-Desktop_Qt_6_1_2_MinGW_64_bit-Debug/config.tests/ntddmodm
+> Info: creating stash file C:\Users\selfh\work\cat\qtSerialPort\build-qtserialport-Desktop_Qt_6_1_2_MinGW_64_bit-Debug\config.tests\.qmake.stash
++ cd /d C:\Users\selfh\work\cat\qtSerialPort\build-qtserialport-Desktop_Qt_6_1_2_MinGW_64_bit-Debug\config.tests\ntddmodm && set MAKEFLAGS=& mingw32-make
+> g++ -c -fno-keep-inline-dllexport -O2 -std=gnu++1z -w -fexceptions -mthreads -DUNICODE -D_UNICODE -DWIN32 -DMINGW_HAS_SECURE_API=1 -I. -IC:/Qt/6.1.2/mingw81_64/mkspecs/win32-g++  -o main.o main.cpp
+> g++ -Wl,-s -Wl,-subsystem,console -mthreads -o ntddmodm.exe main.o  
+test config.qtserialport_serialport.tests.ntddmodm succeeded

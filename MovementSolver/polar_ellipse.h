@@ -15,7 +15,7 @@ public:
 
     PolarEllipse(double x, double y, double a, double b);
 
-    Geometry::Dot value(double angle) override;
+    Geometry::Dot value(double angle, double phase) override;
 
 };
 

@@ -83,6 +83,16 @@ double Math::degree(double angle)
     return angle * 180.0 / pi; // Rad -> Deg
 };
 
+double Math::solveAngle(double angle)
+{
+    angle = fmod(angle, pi2); // Skip all full turns
+
+    if(angle < 0.0)
+        angle = pi2 + angle; // Make rotation positive
+
+    return angle;
+};
+
 Geometry::Vector Math::decart(double length, double angle)
 {
     double x = length * cos(angle);
